@@ -32,7 +32,7 @@ Self-scheduling deploy agent for Dockerized apps on a single box. It pulls your 
 ```bash
 # As root on the target server
 apt-get update && apt-get install -y git
-cd /opt && git clone https://github.com/your-org/indie-agent.git
+cd /opt && git clone https://github.com/leo-guinan/indie-agent.git
 cd indie-agent
 # Optional: edit defaults at the top of install.sh
 sudo bash install.sh
