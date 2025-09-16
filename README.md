@@ -36,7 +36,7 @@ cd /opt && git clone https://github.com/your-org/indie-agent.git
 cd indie-agent
 # Optional: edit defaults at the top of install.sh
 sudo bash install.sh
-
+```
 This will:
 
 create /opt/indie-agent and /var/lib/indie-agent
@@ -52,19 +52,23 @@ install the indie-agent CLI wrapper to /usr/local/bin
 Register your first app
 
 Your app lives in its own repo that contains a docker-compose.yml (with reverse-proxy labels). Register it with the agent:
-
+```
 sudo indie-agent register blog \
   git@github.com:you/ghost-prod.git \
   https://blog.example.com/ghost/#/signin \
   main true
 
 Args: <name> <git-url> <health-url> [branch=main] [image_updates=false]
-
+```
 The timer runs every 5 minutes. Force a run any time:
-
+```
 sudo indie-agent run
 sudo journalctl -u indie-agent.service -n 200 -f
+```
+
+
 App config format (/opt/indie-agent/apps/<name>/app.json)
+```
 {
   "repo": "git@github.com:you/ghost-prod.git",
   "branch": "main",
@@ -75,9 +79,13 @@ App config format (/opt/indie-agent/apps/<name>/app.json)
   "post_hook": "",
   "health_check": { "url": "https://blog.example.com/ghost/#/signin", "timeout": 10, "retries": 2, "interval": 3 }
 }
+```
+
 Uninstall
+```
 sudo bash uninstall.sh        # keeps /opt/indie-agent and /var/lib/indie-agent
 sudo bash uninstall.sh --purge  # removes code and state (be careful)
+```
 Security
 
 Use deploy keys (read-only) for private repos
