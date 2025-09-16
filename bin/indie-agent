@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+BASE=/opt/indie-agent
+STATE=/var/lib/indie-agent
+APPS=${BASE}/apps
+CMD=${1:-help}
+
+
+case "$CMD" in
+run)
+sudo systemctl start indie-agent.service
+;;
+status)
+systemctl list-timers indie-agent* || true
+systemctl status indie-agent.service --no-pager || true
+;;
+logs)
+app=${2:-}
+if [[ -z "$app" ]]; then
+sudo journalctl -u indie-agent.service -n 200 -f
+else
+tail -n 200 -f ${STATE}/logs/${app}.log
+fi
+;;
+register)
+# indie-agent register <name> <git-url> <health-url> [branch=main] [image_updates=false]
+name=${2:?name}; repo=${3:?repo}; health=${4:?health}; branch=${5:-main}; img=${6:-false}
+dir=${APPS}/${name}
+mkdir -p "$dir"
+cat >"$dir"/app.json <<JSON
+{
+"repo": "${repo}",
+"branch": "${branch}",
+"image_updates": ${img},
+"compose_file": "docker-compose.yml",
+"workdir": "repo",
+"pre_hook": "",
+"post_hook": "",
+"health_check": { "url": "${health}", "timeout": 10, "retries": 2, "interval": 3 }
+}
+JSON
+echo "Registered ${name} in ${dir}. First run within 5 minutes.";
+;;
+version)
+echo "indie-agent v0.1.0"
+;;
+*)
+echo "Usage: indie-agent <run|status|logs [app]|register <name> <git-url> <health-url> [branch] [image_updates]|version>";
+;;
+esac
