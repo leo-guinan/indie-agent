@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["repo"],
+  "properties": {
+    "repo": {"type": "string"},
+    "branch": {"type": "string"},
+    "image_updates": {"type": "boolean"},
+    "compose_file": {"type": "string"},
+    "workdir": {"type": "string"},
+    "pre_hook": {"type": "string"},
+    "post_hook": {"type": "string"},
+    "health_check": {
+      "type": "object",
+      "properties": {
+        "url": {"type": "string"},
+        "timeout": {"type": "number"},
+        "retries": {"type": "number"},
+        "interval": {"type": "number"}
+      }
+    }
+  }
+}
