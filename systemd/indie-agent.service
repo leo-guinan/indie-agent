@@ -1,0 +1,17 @@
+[Unit]
+Description=Indie deploy agent
+After=network-online.target docker.service
+Wants=network-online.target
+
+
+[Service]
+Type=oneshot
+User=indie
+Group=indie
+WorkingDirectory=/opt/indie-agent
+ExecStart=/opt/indie-agent/agent/agent.sh
+Nice=10
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
