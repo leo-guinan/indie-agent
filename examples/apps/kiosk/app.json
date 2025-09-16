@@ -1,0 +1,9 @@
+{
+  "repo": "git@github.com:you/kiosk.git",
+  "branch": "release",
+  "image_updates": false,
+  "compose_file": "docker-compose.yml",
+  "workdir": "repo",
+  "pre_hook": "docker compose -f repo/docker-compose.yml run --rm web npm run prisma:migrate",
+  "health_check": { "url": "https://kiosk.example.com/healthz", "timeout": 5, "retries": 2, "interval": 3 }
+}
