@@ -1,0 +1,8 @@
+{
+  "repo": "git@github.com:you/ghost-prod.git",
+  "branch": "main",
+  "image_updates": true,
+  "compose_file": "docker-compose.yml",
+  "workdir": "repo",
+  "health_check": { "url": "https://blog.example.com/ghost/#/signin", "timeout": 10, "retries": 2, "interval": 3 }
+}
