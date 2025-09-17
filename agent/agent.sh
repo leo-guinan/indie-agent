@@ -1,4 +1,14 @@
 #!/usr/bin/env bash
+
+
+health_check(){
+local url="$1"; local timeout="$2"; local retries="$3"; local interval="$4"
+[[ -z "$url" ]] && return 0
+for ((i=0;i<=retries;i++)); do
+if http_ok "$url" "$timeout"; then return 0; fi
+sleep "$interval"
+done
+return 1
 }
 
 
