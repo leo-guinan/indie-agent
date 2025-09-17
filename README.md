@@ -52,7 +52,7 @@ install the indie-agent CLI wrapper to /usr/local/bin
 Register your first app
 
 Your app lives in its own repo that contains a docker-compose.yml (with reverse-proxy labels). Register it with the agent:
-```
+```bash
 sudo indie-agent register blog \
   git@github.com:you/ghost-prod.git \
   https://blog.example.com/ghost/#/signin \
@@ -61,14 +61,14 @@ sudo indie-agent register blog \
 Args: <name> <git-url> <health-url> [branch=main] [image_updates=false]
 ```
 The timer runs every 5 minutes. Force a run any time:
-```
+```bash
 sudo indie-agent run
 sudo journalctl -u indie-agent.service -n 200 -f
 ```
 
 
 App config format (/opt/indie-agent/apps/<name>/app.json)
-```
+```json
 {
   "repo": "git@github.com:you/ghost-prod.git",
   "branch": "main",
@@ -81,8 +81,20 @@ App config format (/opt/indie-agent/apps/<name>/app.json)
 }
 ```
 
-Uninstall
+### Traefik (Cloudflare DNS-01)
+
+
+To install Traefik with Cloudflare DNS-01 certificates on a fresh host:
+
+
+```bash
+sudo bash scripts/setup-traefik.sh \
+--email you@example.com \
+--cf-token <cloudflare_api_token>
 ```
+
+Uninstall
+```bash
 sudo bash uninstall.sh        # keeps /opt/indie-agent and /var/lib/indie-agent
 sudo bash uninstall.sh --purge  # removes code and state (be careful)
 ```
