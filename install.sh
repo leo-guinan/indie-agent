@@ -1,14 +1,24 @@
 #!/usr/bin/env bash
-# indie-agent installer (v0.1.1)
+# indie-agent installer (v0.1.2) — supports in-place installs
 set -Eeuo pipefail
 
 # === Defaults (override via env) ===
-RUN_AS="${RUN_AS:-indie}"            # system user to run the agent
-INSTALL_DOCKER="${INSTALL_DOCKER:-true}"  # install Docker if missing
-TIMER_INTERVAL="${TIMER_INTERVAL:-5m}"    # OnUnitActiveSec value for the timer
+RUN_AS="${RUN_AS:-indie}"                  # system user to run the agent
+INSTALL_DOCKER="${INSTALL_DOCKER:-true}"   # install Docker if missing
+TIMER_INTERVAL="${TIMER_INTERVAL:-5m}"     # systemd OnUnitActiveSec
+BASE="${BASE:-/opt/indie-agent}"           # install target
 
-ensure_root() { if [[ $EUID -ne 0 ]]; then echo "Run as root" >&2; exit 1; fi; }
+ensure_root() { [[ $EUID -eq 0 ]] || { echo "Run as root" >&2; exit 1; }; }
 ensure_root
+
+# Where is the repo we're running from?
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+SRC_AGENT="${REPO_DIR}/agent/agent.sh"
+SRC_CLI="${REPO_DIR}/bin/indie-agent"
+DST_AGENT="${BASE}/agent/agent.sh"
+DST_CLI="/usr/local/bin/indie-agent"
+
+same_path() { [[ "$(readlink -f "$1")" == "$(readlink -f "$2")" ]]; }
 
 echo ">> Installing base deps"
 apt-get update -y
@@ -40,18 +50,34 @@ echo ">> Docker group membership"
 getent group docker >/dev/null || groupadd docker
 usermod -aG docker "$RUN_AS"
 
-echo ">> Laying out directories"
-BASE="/opt/indie-agent"
-STATE="/var/lib/indie-agent"
-mkdir -p "$BASE"/{bin,agent,systemd,examples,docs,apps} "$STATE/logs"
-chown -R "$RUN_AS":"$RUN_AS" "$BASE" "$STATE"
+echo ">> Laying out directories at ${BASE}"
+mkdir -p "${BASE}"/{bin,agent,systemd,examples,docs,apps} /var/lib/indie-agent/logs
+chown -R "$RUN_AS":"$RUN_AS" "$BASE" /var/lib/indie-agent
 
-echo ">> Installing agent + CLI from repo checkout"
-# Expect these files to exist in the repo:
-#   agent/agent.sh
-#   bin/indie-agent
-install -m 0755 agent/agent.sh "$BASE/agent/agent.sh"
-install -m 0755 bin/indie-agent /usr/local/bin/indie-agent
+echo ">> Installing agent"
+if [[ -f "$SRC_AGENT" ]]; then
+  if same_path "$SRC_AGENT" "$DST_AGENT"; then
+    chmod 0755 "$DST_AGENT"
+    echo "   (in-place) agent already at ${DST_AGENT}"
+  else
+    install -m 0755 -D "$SRC_AGENT" "$DST_AGENT"
+  fi
+else
+  echo "ERROR: $SRC_AGENT not found" >&2; exit 1
+fi
+
+echo ">> Installing CLI"
+if [[ -f "$SRC_CLI" ]]; then
+  # Prefer a symlink so in-place updates reflect immediately
+  if [[ -e "$DST_CLI" && -L "$DST_CLI" && "$(readlink -f "$DST_CLI")" == "$(readlink -f "$SRC_CLI")" ]]; then
+    :
+  else
+    ln -sf "$SRC_CLI" "$DST_CLI" || install -m 0755 -D "$SRC_CLI" "$DST_CLI"
+  fi
+  chmod 0755 "$DST_CLI"
+else
+  echo "ERROR: $SRC_CLI not found" >&2; exit 1
+fi
 
 echo ">> Writing systemd units"
 cat > /etc/systemd/system/indie-agent.service <<EOF
@@ -65,7 +91,7 @@ Type=oneshot
 User=${RUN_AS}
 Group=${RUN_AS}
 WorkingDirectory=${BASE}
-ExecStart=${BASE}/agent/agent.sh
+ExecStart=${DST_AGENT}
 Nice=10
 ProtectSystem=full
 ProtectHome=true
@@ -91,5 +117,6 @@ systemctl daemon-reload
 systemctl enable --now indie-agent.timer
 
 echo "✅ Installed. Runs as ${RUN_AS}. Timer interval: ${TIMER_INTERVAL}."
-echo "Apps dir: ${BASE}/apps   |   State: ${STATE}"
-echo "CLI: indie-agent  (run | status | logs [app] | register ...)"
+echo "Repo: ${REPO_DIR}"
+echo "Base: ${BASE}"
+echo "CLI: ${DST_CLI}  (try: indie-agent status)"
