@@ -73,6 +73,11 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./letsencrypt:/letsencrypt
+    networks:
+      - traefik_proxy
+networks:
+  traefik_proxy:
+    external: true
 YAML
 
 ACME_STORE="$BASE/letsencrypt/acme.json"
